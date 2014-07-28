@@ -1,6 +1,6 @@
 M300
-M71 (Livella piano Z)
-;M71 (Level Z plate)
+;M71 (Livella piano Z)
+M71 (Level Z plate)
 G21 ; set units to millimeters
 T0
 G28 ;Home all axis
@@ -31,8 +31,8 @@ G1 X169.899 Y20.096 E12.79532
 G1 X169.895 Y121.032 E15.00772
 G1 F6000.000 E14.00772
 G92 E0
-M71 (Regola viti 1  )
-;M71 (Calibrate screw 1)
+;M71 (Regola viti 1  )
+M71 (Calibrate screw 1)
 M300
 G1 X167.393 Y122.792 F6000.000
 G1 F6000.000 E1.00000
@@ -45,8 +45,8 @@ G1 X167.401 Y22.595 E12.37373
 G1 X167.393 Y122.792 E14.56995
 G1 F6000.000 E13.56995
 G92 E0
-M71 (Regola viti 2)
-;M71 (Calibrate screw 2)
+;M71 (Regola viti 2)
+M71 (Calibrate screw 2)
 M300
 G92 E0
 G1 Z0.400 F6000.000

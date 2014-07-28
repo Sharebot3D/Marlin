@@ -21,7 +21,7 @@ CardReader::CardReader()
    file_subcall_ctr=0;
    memset(workDirParents, 0, sizeof(workDirParents));
 
-   autostart_stilltocheck=true; //the sd start is delayed, because otherwise the serial cannot answer fast enought to make contact with the hostsoftware.
+   autostart_stilltocheck=true; //the SD start is delayed, because otherwise the serial cannot answer fast enough to make contact with the host software.
    lastnr=0;
   //power to SD reader
   #if SDPOWER > -1
@@ -246,7 +246,7 @@ void CardReader::openFile(char* name,bool read, bool replace_current/*=true*/)
 {
   if(!cardOK)
     return;
-  if(file.isOpen())  //replaceing current file by new file, or subfile call
+  if(file.isOpen())  //replacing current file by new file, or subfile call
   {
     if(!replace_current)
     {
@@ -438,7 +438,7 @@ void CardReader::removeFile(char* name)
     if (file.remove(curDir, fname)) 
     {
       SERIAL_PROTOCOLPGM("File deleted:");
-      SERIAL_PROTOCOL(fname);
+      SERIAL_PROTOCOLLN(fname);
       sdpos = 0;
     }
     else
@@ -545,7 +545,7 @@ void CardReader::closefile(bool store_location)
   
   if(store_location)
   {
-    //future: store printer state, filename and position for continueing a stoped print
+    //future: store printer state, filename and position for continuing a stopped print
     // so one can unplug the printer and continue printing the next day.
     
   }

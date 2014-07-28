@@ -16,9 +16,14 @@
 #include "sc_level_plate_a.h"
 #include "sc_level_plate_m.h"
 #endif
-#elif LANGUAGE_CHOICE == 1 
+#elif LANGUAGE_CHOICE == 1
+#if MACHINE_3D == 1
+#include "sc_3d_level_plate_a_en.h"
+#include "sc_3d_level_plate_m_en.h"
+#else
 #include "sc_level_plate_a_en.h"
 #include "sc_level_plate_m_en.h"
+#endif
 #else
 #include "sc_level_plate_a.h"
 #include "sc_level_plate_m.h"
