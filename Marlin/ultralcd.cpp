@@ -48,7 +48,8 @@ static void lcd_ut_level_plate_a();
 static void lcd_ut_level_plate_m();
 static void lcd_ut_change_right();
 static void lcd_ut_change_left();
-static void lcd_ut_nozzles();
+static void lcd_ut_movedown();
+static void lcd_ut_dual();
 static void lcd_cooldown();
 
 /* Different menus */
@@ -454,7 +455,7 @@ static void lcd_tune_menu()
     MENU_ITEM(submenu, MSG_BABYSTEP_Z, lcd_babystep_z);
 #endif
 #ifdef FILAMENTCHANGEENABLE
-    MENU_ITEM(gcode, MSG_FILAMENTCHANGE, PSTR("M600"));
+    MENU_ITEM(gcode, MSG_FILAMENTCHANGE, PSTR("M600 X220 Y200"));
 #endif
     END_MENU();
 }
@@ -629,19 +630,22 @@ static void lcd_prepare_menu()
 #endif
     MENU_ITEM(submenu, MSG_MOVE_AXIS, lcd_move_menu);
     MENU_ITEM(function, MSG_PLATE_LEVEL_A, lcd_ut_level_plate_a);
+#ifndef CFG_MATERIA101
     MENU_ITEM(function, MSG_PLATE_LEVEL_M, lcd_ut_level_plate_m);
-    //MENU_ITEM(function, MSG_NOZZLES, lcd_ut_nozzles);
+    MENU_ITEM(function, MSG_MOVEDOWN, lcd_ut_movedown);
+#endif
 #if EXTRUDERS > 1
     if ( card.printingpaused ) {
-        MENU_ITEM(gcode, MSG_CHANGE_RIGHT, PSTR("M600 T0"));
-        MENU_ITEM(gcode, MSG_CHANGE_LEFT, PSTR("M600 T1"));
+        MENU_ITEM(gcode, MSG_CHANGE_RIGHT, PSTR("M600 T0 X220 Y200"));
+        MENU_ITEM(gcode, MSG_CHANGE_LEFT, PSTR("M600 T1 X220 Y200"));
     } else {
         MENU_ITEM(function, MSG_CHANGE_RIGHT, lcd_ut_change_right);
         MENU_ITEM(function, MSG_CHANGE_LEFT, lcd_ut_change_left);
     }
+    MENU_ITEM(function, MSG_DUAL_CALIBRATION, lcd_ut_dual);
 #else
     if ( card.printingpaused ) {
-        MENU_ITEM(gcode, MSG_CHANGE_RIGHT, PSTR("M600"));
+        MENU_ITEM(gcode, MSG_CHANGE_RIGHT, PSTR("M600 X220 Y200"));
     } else {
         MENU_ITEM(function, MSG_CHANGE_SINGLE, lcd_ut_change_right);
     }
@@ -1051,7 +1055,9 @@ void lcd_sdprint_settings()
     MENU_ITEM(back, MSG_MAIN, lcd_main_menu);
     MENU_ITEM(submenu, MSG_PRINT_GCODE, lcd_sdprint_none );
     MENU_ITEM(submenu, "PLA", lcd_sdprint_pla );
+#ifndef CFG_MATERIA101
     MENU_ITEM(submenu, "ABS", lcd_sdprint_abs );
+#endif
     END_MENU();
 }
 
@@ -1108,6 +1114,12 @@ static void lcd_ut_level_plate_m()
 
 static void lcd_ut_change_right()
 {
+  utility.startMemprint(3);
+  lcd_return_to_status();
+}
+
+static void lcd_ut_movedown()
+{
   utility.startMemprint(4);
   lcd_return_to_status();
 }
@@ -1118,9 +1130,9 @@ static void lcd_ut_change_left()
   lcd_return_to_status();
 }
 
-static void lcd_ut_nozzles()
+static void lcd_ut_dual()
 {
-  utility.startMemprint(3);
+  utility.startMemprint(6);
   lcd_return_to_status();
 }
 
@@ -1436,6 +1448,12 @@ void lcd_update()
             lcdDrawUpdate--;
         lcd_next_update_millis = millis() + 100;
     }
+}
+
+const char *lcd_getstatus( int *level )
+{
+   *level=lcd_status_message_level;
+   return lcd_status_message;
 }
 
 void lcd_setstatus(const char* message)

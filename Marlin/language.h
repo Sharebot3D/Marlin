@@ -1,6 +1,8 @@
 #ifndef LANGUAGE_H
 #define LANGUAGE_H
 
+#include "Configuration.h"
+
 // NOTE: IF YOU CHANGE THIS FILE / MERGE THIS FILE WITH CHANGES
 //
 //   ==> ALWAYS TRY TO COMPILE MARLIN WITH/WITHOUT "ULTIPANEL" / "ULTRALCD" / "SDSUPPORT" #define IN "Configuration.h" 
@@ -32,6 +34,12 @@
 #if MACHINE_3D == 1
 #define MACHINE_NAME "3D Printer"
 #define FIRMWARE_URL "http://www.google.it"
+#endif
+
+#ifdef CFG_MATERIA101
+#define MACHINE_NAME "MATERIA 101     "
+#define FIRMWARE_URL "http://www.arduino.cc"
+#define LANGUAGE_CHOICE 1
 #endif
 
 #if MOTHERBOARD == 34 || MOTHERBOARD == 34
@@ -125,9 +133,12 @@
         #define MSG_MOVE_01MM "Move 0.1mm"
         #define MSG_MOVE_1MM "Move 1mm"
         #define MSG_MOVE_10MM "Move 10mm"
-	#define MSG_PLATE_LEVEL_A        "Level plate Auto "
+	#define MSG_PLATE_LEVEL_A        "Test plate"
         #define MSG_PLATE_LEVEL_M        "Level plate Man. "
-        #define MSG_NOZZLES              "Nozzles Calib.   "
+        #define MSG_MOVEDOWN             "Move plate down  "
+        #define MSG_DUAL_CALIBRATION     "Dual calibration "
+        #define MSG_MOVEDOWN             "Move plate down  "
+        #define MSG_DUAL_CALIBRATION     "Dual calibration "
         #define MSG_CHANGE_RIGHT         "Change Right Fil."
         #define MSG_CHANGE_LEFT          "Change Left Fil. "
         #define MSG_CHANGE_SINGLE        "Change Filament  "
@@ -1184,6 +1195,8 @@
 	#define MSG_LOAD_SINGLE "Load"
         #define MSG_PLATE_LEVEL_A        "Level plate Auto "
         #define MSG_PLATE_LEVEL_M        "Level plate Man. "
+        #define MSG_MOVEDOWN             "Move plate down  "
+        #define MSG_DUAL_CALIBRATION     "Dual calibration "
         #define MSG_CHANGE_RIGHT         "Change Right Fil."
         #define MSG_CHANGE_LEFT          "Change Left Fil. "
         #define MSG_CHANGE_SINGLE        "Change Filament  "
@@ -1391,9 +1404,10 @@
         #define MSG_MOVE_01MM            "Move 0.1mm"
         #define MSG_MOVE_1MM             "Move 1mm"
         #define MSG_MOVE_10MM            "Move 10mm"
-	#define MSG_PLATE_LEVEL_A 	 "Calib. Piano Auto"
+	#define MSG_PLATE_LEVEL_A 	 "Test Piano"
         #define MSG_PLATE_LEVEL_M        "Calib. Piano Man."
-        #define MSG_NOZZLES              "Calib. Ugelli    "
+        #define MSG_MOVEDOWN             "Abbassa piano    "
+        #define MSG_DUAL_CALIBRATION     "Calibraz. Dual   "
 	#define MSG_CHANGE_RIGHT 	 "Cambia Filo DX   "
         #define MSG_CHANGE_LEFT          "Cambia Filo SX   "
         #define MSG_CHANGE_SINGLE 	 "Cambia Filo      "
@@ -1457,7 +1471,7 @@
 	#define MSG_NO_CARD              "No SD Card"
 	#define MSG_DWELL                "Sospensione..."
 	#define MSG_USERWAIT             "Attendi Utente..."
-	#define MSG_RESUMING             "Riprendi Stampa"
+	#define MSG_RESUMING             "Ripresa Stampa   "
 	#define MSG_NO_MOVE              "Nessun Movimento."
 	#define MSG_KILLED               "UCCISO. "
 	#define MSG_STOPPED              "ARRESTATO. "

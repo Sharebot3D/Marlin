@@ -7,6 +7,7 @@
 
   void lcd_update();
   void lcd_init();
+  const char *lcd_getstatus( int *level );
   void lcd_setstatus(const char* message);
   void lcd_setstatuspgm(const char* message);
   void lcd_setalertstatuspgm(const char* message);
@@ -91,6 +92,7 @@
 #else //no LCD
   FORCE_INLINE void lcd_update() {}
   FORCE_INLINE void lcd_init() {}
+  FORCE_INLINE const char *lcd_getstatus( int *level ) {}
   FORCE_INLINE void lcd_setstatus(const char* message) {}
   FORCE_INLINE void lcd_buttons_update() {}
   FORCE_INLINE void lcd_reset_alert_level() {}

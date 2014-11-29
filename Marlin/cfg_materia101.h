@@ -5,17 +5,6 @@
 // Advanced settings can be found in Configuration_adv.h
 // BASIC SETTINGS: select your board type, temperature sensor type, axis scaling, and endstop configuration
 
-// Specific configurations
-//#define CFG_MATERIA101
-
-#ifdef CFG_MATERIA101
-#undef CONFIGURATION_H
-#include "cfg_materia101.h"
-#include "cfg_materia101_adv.h"
-
-#else
-// Default: Marlin configuration
-
 //===========================================================================
 //============================= DELTA Printer ===============================
 //===========================================================================
@@ -27,7 +16,7 @@
 // startup. Implementation of an idea by Prof Braino to inform user that any changes made to this
 // build by the user have been successfully uploaded into firmware.
 #define STRING_VERSION_CONFIG_H __DATE__ " " __TIME__ // build date and time
-#define STRING_CONFIG_H_AUTHOR "SHAREBOT NG3" // Who made the changes.
+#define STRING_CONFIG_H_AUTHOR "SHAREBOT MATERIA101" // Who made the changes.
 
 // SERIAL_PORT selects which serial port should be used for communication with the host.
 // This allows the connection of wireless adapters (for instance) to non-default port pins.
@@ -85,7 +74,7 @@
 // 88 = 5DPrint D8 Driver Board
 
 #ifndef MOTHERBOARD
-   #define MOTHERBOARD 80
+   #define MOTHERBOARD 34 
 #endif
 
 // Define this to set a custom name for your generic Mendel,
@@ -97,8 +86,8 @@
 
 // This defines the number of extruders
 #ifndef EXTRUDERS
-//   #define EXTRUDERS 1
-#define EXTRUDERS 2
+#define EXTRUDERS 1
+//#define EXTRUDERS 2
 #endif
 
 //// The following define selects which power supply you have. Please choose the one that matches your setup
@@ -153,7 +142,7 @@
  #define TEMP_SENSOR_0 1
  #define TEMP_SENSOR_1 0
  #define TEMP_SENSOR_2 0
- #define TEMP_SENSOR_BED 1
+ #define TEMP_SENSOR_BED 0
 
 #endif
 
@@ -346,10 +335,10 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 // Sets direction of endstops when homing; 1=MAX, -1=MIN
 #define X_HOME_DIR 1
 #define Y_HOME_DIR 1
-#define Z_HOME_DIR 1
+#define Z_HOME_DIR -1
 
 #if MOTHERBOARD == 34
-#define Z_HOME_DIR 1
+#define Z_HOME_DIR -1
 #elif MOTHERBOARD == 80
 #define Z_HOME_DIR -1
 #endif
@@ -358,11 +347,11 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 #define max_software_endstops true  // If true, axis won't move to coordinates greater than the defined lengths below.
 
 // Travel limits after homing
-#define X_MAX_POS 205
+#define X_MAX_POS 140
 #define X_MIN_POS 0
-#define Y_MAX_POS 205
+#define Y_MAX_POS 110
 #define Y_MIN_POS 0
-#define Z_MAX_POS 200
+#define Z_MAX_POS 100
 #define Z_MIN_POS 0
 
 #define X_MAX_LENGTH (X_MAX_POS - X_MIN_POS)
@@ -462,11 +451,11 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 // Travel limits after homing
 #if EXTRUDERS == 1
 
- #define X_MAX_POS 260
+ #define X_MAX_POS 140
  #define X_MIN_POS 0
- #define Y_MAX_POS 200
+ #define Y_MAX_POS 110
  #define Y_MIN_POS 0
- #define Z_MAX_POS 210
+ #define Z_MAX_POS 100
  #define Z_MIN_POS 0
 
  #if MOTHERBOARD == 80
@@ -483,9 +472,9 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 
 //Manual homing switch locations:
 // For deltabots this means top and center of the cartesian print volume.
- #define MANUAL_X_HOME_POS 260
- #define MANUAL_Y_HOME_POS 200
- #define MANUAL_Z_HOME_POS 210
+ #define MANUAL_X_HOME_POS 140
+ #define MANUAL_Y_HOME_POS 110
+ #define MANUAL_Z_HOME_POS 100
  #if MOTHERBOARD == 80
    #define MANUAL_Z_HOME_POS 206
  #endif
@@ -517,9 +506,9 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 
 //Manual homing switch locations:
 // For deltabots this means top and center of the cartesian print volume.
- #define MANUAL_X_HOME_POS 230
- #define MANUAL_Y_HOME_POS 200
- #define MANUAL_Z_HOME_POS 210
+ #define MANUAL_X_HOME_POS 140
+ #define MANUAL_Y_HOME_POS 110
+ #define MANUAL_Z_HOME_POS 100
  #if MOTHERBOARD == 80
    #define MANUAL_Z_HOME_POS 206
  #endif
@@ -538,8 +527,8 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 #define DEFAULT_MAX_FEEDRATE          {300, 300, 19, 35}    // (mm/sec)
 #define DEFAULT_MAX_ACCELERATION      {2000,2000,100,2000}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
 
-#define DEFAULT_ACCELERATION          800    // X, Y, Z and E max acceleration in mm/s^2 for printing moves
-#define DEFAULT_RETRACT_ACCELERATION  800   // X, Y, Z and E max acceleration in mm/s^2 for retracts
+#define DEFAULT_ACCELERATION          2000    // X, Y, Z and E max acceleration in mm/s^2 for printing moves
+#define DEFAULT_RETRACT_ACCELERATION  2000   // X, Y, Z and E max acceleration in mm/s^2 for retracts
 
 // Offset of the extruders (uncomment if using more than one and relying on firmware to position when changing).
 // The offset has to be X=0, Y=0 for the extruder 0 hotend (default extruder).
@@ -580,11 +569,11 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 
 // Preheat Constants
 #define PLA_PREHEAT_HOTEND_TEMP 230 
-#define PLA_PREHEAT_HPB_TEMP 90
+#define PLA_PREHEAT_HPB_TEMP 70
 #define PLA_PREHEAT_FAN_SPEED 255   // Insert Value between 0 and 255
 
 #define ABS_PREHEAT_HOTEND_TEMP 230
-#define ABS_PREHEAT_HPB_TEMP 90
+#define ABS_PREHEAT_HPB_TEMP 70
 #define ABS_PREHEAT_FAN_SPEED 255   // Insert Value between 0 and 255
 
 //LCD and SD support
@@ -810,8 +799,7 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 //#define SERVO_ENDSTOPS {-1, -1, 0} // Servo index for X, Y, Z. Disable with -1
 //#define SERVO_ENDSTOP_ANGLES {0,0, 0,0, 70,0} // X,Y,Z Axis Extend and Retract angles
 
-#include "Configuration_adv.h"
+#include "cfg_materia101_adv.h"
 #include "thermistortables.h"
 
-#endif // Default Marlin configuration
 #endif //__CONFIGURATION_H

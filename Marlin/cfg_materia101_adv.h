@@ -1,16 +1,7 @@
 #ifndef CONFIGURATION_ADV_H
 #define CONFIGURATION_ADV_H
 
-#ifdef CFG_MATERIA101
-
-// Load specific Configuration_adv.h
-#undef CONFIGURATION_ADV_H
 #include "Configuration.h"
-
-#else
-// Default: marlin configuration
-#include "Configuration.h"
-
 //===========================================================================
 //=============================Thermal Settings  ============================
 //===========================================================================
@@ -71,8 +62,8 @@
 //This is for controlling a fan to cool down the stepper drivers
 //it will turn on when any driver is enabled
 //and turn off after the set amount of seconds from last driver being disabled again
-#define CONTROLLERFAN_PIN -1 //Pin used for the fan to cool controller (-1 to disable)
-#define CONTROLLERFAN_SECS 60 //How many seconds, after all motors were disabled, the fan should run
+#define CONTROLLERFAN_PIN 5 //Pin used for the fan to cool controller (-1 to disable)
+#define CONTROLLERFAN_SECS 120 //How many seconds, after all motors were disabled, the fan should run
 #if MOTHERBOARD == 80
   #define  CONTROLLERFAN_PIN 7
   #define CONTROLLERFAN_SECS 120
@@ -440,7 +431,7 @@ const unsigned int dropsegments=5; //everything with less than this number of st
   #ifdef FILAMENTCHANGEENABLE
     #define FILAMENTCHANGE_XPOS 100
     #define FILAMENTCHANGE_YPOS 100
-    #define FILAMENTCHANGE_ZADD 10
+    #define FILAMENTCHANGE_ZADD 0
     #define FILAMENTCHANGE_FIRSTRETRACT -0
     #define FILAMENTCHANGE_FINALRETRACT -200
     #define FILAMENTCHANGE_FEEDRATE 600
@@ -512,5 +503,5 @@ const unsigned int dropsegments=5; //everything with less than this number of st
   #undef BED_MAXTEMP
 #endif
 
-#endif // Default marlin configuration
+
 #endif //__CONFIGURATION_ADV_H

@@ -166,6 +166,7 @@
 // M503 - print the current settings (from memory not from EEPROM)
 // M540 - Use S[0|1] to enable or disable the stop SD card print on endstop hit (requires ABORT_ON_ENDSTOP_HIT_FEATURE_ENABLED)
 // M600 - Pause for filament change X[pos] Y[pos] Z[relative lift] E[initial retract] L[later retract distance for removal]
+// M613 - Return status information immediatly
 // M665 - set delta configurations
 // M666 - set delta endstop adjustment
 // M605 - Set dual x-carriage movement mode: S<mode> [ X<duplication x-offset> R<duplication temp offset> ]
@@ -174,6 +175,7 @@
 // M350 - Set microstepping mode.
 // M351 - Toggle MS1 MS2 pins directly.
 // M928 - Start SD logging (M928 filename.g) - ended by M29
+// M997 - Homing double Z axis
 // M999 - Restart after being stopped by error
 
 //Stepper Movement Variables
@@ -291,6 +293,13 @@ float forced_M104;
 float forced_M106;
 float forced_M109;
 float forced_M190;
+
+//#define USE_FILAMENT_DETECTION
+// Forced filament change from filament detection
+#ifdef USE_FILAMENT_DETECTION
+boolean forced_M600 = false;
+boolean forced_M600_inqueue = false;
+#endif
 
 //===========================================================================
 //=============================Private Variables=============================
@@ -608,6 +617,18 @@ void loop()
 
 void get_command()
 {
+#ifdef USE_FILAMENT_DETECTION
+  if ( ( forced_M600 == true ) && ( buflen < BUFSIZE ) 
+       && ( forced_M600_inqueue == false ) && ( serial_count == 0 ) ) {
+    forced_M600_inqueue = true;
+    strcpy( cmdbuffer[bufindw], "M600" );
+    SERIAL_ECHO_START;
+    SERIAL_ECHOLNPGM("Forced M600 from filament detection");
+    bufindw = (bufindw + 1)%BUFSIZE;
+    buflen += 1;
+    return;
+  }
+#endif
   while( MYSERIAL.available() > 0  && buflen < BUFSIZE) {
     serial_char = MYSERIAL.read();
     if(serial_char == '\n' ||
@@ -719,9 +740,55 @@ void get_command()
         //If command was e-stop process now
         if(strcmp(cmdbuffer[bufindw], "M112") == 0)
           kill();
-        
-        bufindw = (bufindw + 1)%BUFSIZE;
-        buflen += 1;
+       
+        // Comando diretto lo processa qui e non lo salva
+        if ( strcmp( cmdbuffer[bufindw], "M613" ) == 0 ) {
+           int level;
+
+           SERIAL_ECHO_START;
+           SERIAL_ECHOPGM("M613");
+           SERIAL_ECHO(lcd_getstatus(&level));
+           SERIAL_ECHO(";");
+           SERIAL_ECHO(level);
+#if EXTRUDERS > 0
+           SERIAL_ECHOPGM(";0:");
+           SERIAL_ECHO(int(degHotend(0) + 0.5 ));
+           SERIAL_ECHOPGM("/");
+           SERIAL_ECHO(int(degTargetHotend(0) + 0.5 ));
+#endif
+#if EXTRUDERS > 1
+           SERIAL_ECHOPGM(";1:");
+           SERIAL_ECHO(int(degHotend(0) + 0.5 ));
+           SERIAL_ECHOPGM("/");
+           SERIAL_ECHO(int(degTargetHotend(0) + 0.5 ));
+#endif
+#if TEMP_SENSOR_BED != 0
+           SERIAL_ECHOPGM(";B:");
+           SERIAL_ECHO(int(degBed() + 0.5 ));
+           SERIAL_ECHOPGM("/");
+           SERIAL_ECHO(int(degTargetBed() + 0.5 ));
+#endif
+
+           if (IS_SD_PRINTING) {
+              SERIAL_ECHOPGM(";");
+              SERIAL_ECHO(itostr3(card.percentDone()));
+           } else {
+              SERIAL_ECHOPGM(";-1");
+           }
+
+           SERIAL_ECHOPGM(";");
+           SERIAL_ECHO(ftostr32(current_position[X_AXIS]));
+           SERIAL_ECHOPGM(";");
+           SERIAL_ECHO(ftostr32(current_position[Y_AXIS]));
+           SERIAL_ECHOPGM(";");
+           SERIAL_ECHO(ftostr32(current_position[Z_AXIS]));
+           SERIAL_ECHOPGM(";");
+           SERIAL_ECHOLN(itostr3(feedmultiply));
+           SERIAL_ECHOLNPGM("ok");
+        } else {
+           bufindw = (bufindw + 1)%BUFSIZE;
+           buflen += 1;
+        }
       }
       serial_count = 0; //clear buffer
     }
@@ -741,6 +808,9 @@ void get_command()
     while ( !utility.eof() && buflen < BUFSIZE ) {
       int16_t n=utility.get();
       serial_char = (char)n;
+
+      //SERIAL_ECHO_START;
+      //SERIAL_ECHOLN( serial_char );
 
       if(serial_char == '\n' ||
        serial_char == 0x00 ||
@@ -1199,6 +1269,45 @@ static void homeaxis(int axis) {
         servos[servo_endstops[axis]].write(servo_endstop_angles[axis * 2 + 1]);
       }
     #endif
+#if defined(Z_DUAL_STEPPER_DRIVERS) && defined(Z2_STEP_PIN) && (Z2_STEP_PIN > -1)
+     if (axis == Z_AXIS) {
+       #if Z_HOME_DIR == 1
+         #define HOME_Z_DUAL_COND ( (READ(Z_MAX_PIN)==1) || (READ(Z2_MAX_PIN)==1) )
+         #define HOME_Z_DUAL_DIR_PIN INVERT_Z_DIR
+       #else
+         #define HOME_Z_DUAL_COND ( (READ(Z_MIN_PIN)==1) || (READ(Z2_MIN_PIN)==1) )
+         #define HOME_Z_DUAL_DIR_PIN !INVERT_Z_DIR
+       #endif
+       while ( HOME_Z_DUAL_COND ) {
+          int i;
+ 
+          manage_heater();
+          manage_inactivity();
+          lcd_update();
+          if ( (READ(Z_MIN_PIN))==1 ) {
+            WRITE(Z_DIR_PIN,HOME_Z_DUAL_DIR_PIN);
+             for ( i=0; i<400; i++ ) {
+                delay(1); 
+                WRITE(Z_STEP_PIN, !INVERT_Z_STEP_PIN);
+                WRITE(Z_STEP_PIN, INVERT_Z_STEP_PIN);
+             }
+          }
+          
+          manage_heater();
+          manage_inactivity();
+          lcd_update();
+          if ( (READ(Z2_MIN_PIN))==1 ) {
+            WRITE(Z2_DIR_PIN,HOME_Z_DUAL_DIR_PIN);
+            for ( i=0; i<400; i++) {
+              delay(1); 
+              WRITE(Z2_STEP_PIN, !INVERT_Z_STEP_PIN);
+              WRITE(Z2_STEP_PIN, INVERT_Z_STEP_PIN);
+            }
+          }
+       }
+     }
+#endif
+
 #if defined (ENABLE_AUTO_BED_LEVELING) && (PROBE_SERVO_DEACTIVATION_DELAY > 0)
     if (axis==Z_AXIS) retract_z_probe();
 #endif
@@ -2965,7 +3074,7 @@ void process_commands()
         //move xy
         if(code_seen('X'))
         {
-          target[X_AXIS]+= code_value();
+          target[X_AXIS] = code_value();
         }
         else
         {
@@ -2975,7 +3084,7 @@ void process_commands()
         }
         if(code_seen('Y'))
         {
-          target[Y_AXIS]= code_value();
+          target[Y_AXIS] = code_value();
         }
         else
         {
@@ -3064,6 +3173,14 @@ void process_commands()
         plan_buffer_line(lastpos[X_AXIS], lastpos[Y_AXIS], lastpos[Z_AXIS], lastpos[E_AXIS], feedrate/60, active_extruder); //final untretract - should do nothing
         feedrate=old_feedrate;
         lcd_ForceStatusScreen(false);
+
+        #ifdef USE_FILAMENT_DETECTION
+        if ( forced_M600 == true ) {
+          forced_M600 = false;
+          forced_M600_inqueue = false;
+          LCD_MESSAGEPGM(MSG_RESUMING);
+        }
+        #endif
     }
     break;
     #endif //FILAMENTCHANGEENABLE
@@ -3176,6 +3293,48 @@ void process_commands()
       #endif
     }
     break;
+
+    case 997: // Allineamento degli assi Z manda un impulso su ciscun asse finche' non raggiungere i fine corsa
+#if defined(Z_DUAL_STEPPER_DRIVERS) && defined(Z2_STEP_PIN) && (Z2_STEP_PIN > -1)
+      enable_z();
+
+      #if Z_HOME_DIR == 1
+        #define HOME_Z_DUAL_COND ( (READ(Z_MAX_PIN)==1) || (READ(Z2_MAX_PIN)==1) )
+        #define HOME_Z_DUAL_DIR_PIN INVERT_Z_DIR
+      #else
+        #define HOME_Z_DUAL_COND ( (READ(Z_MIN_PIN)==1) || (READ(Z2_MIN_PIN)==1) )
+        #define HOME_Z_DUAL_DIR_PIN !INVERT_Z_DIR
+      #endif
+      while ( HOME_Z_DUAL_COND ) {
+        int i;
+
+        manage_heater();
+        manage_inactivity();
+        lcd_update();
+        if ( (READ(Z_MIN_PIN))==1 ) {
+          WRITE(Z_DIR_PIN,HOME_Z_DUAL_DIR_PIN);
+           for ( i=0; i<400; i++ ) {
+              delay(1);
+              WRITE(Z_STEP_PIN, !INVERT_Z_STEP_PIN);
+              WRITE(Z_STEP_PIN, INVERT_Z_STEP_PIN);
+           }
+        }
+
+        manage_heater();
+        manage_inactivity();
+        lcd_update();
+        if ( (READ(Z2_MIN_PIN))==1 ) {
+          WRITE(Z2_DIR_PIN,HOME_Z_DUAL_DIR_PIN);
+          for ( i=0; i<400; i++) {
+            delay(1);
+            WRITE(Z2_STEP_PIN, !INVERT_Z_STEP_PIN);
+            WRITE(Z2_STEP_PIN, INVERT_Z_STEP_PIN);
+          }
+        }
+      }
+#endif
+    break;
+
     case 999: // M999: Restart after being stopped
       Stopped = false;
       lcd_reset_alert_level();
@@ -3331,6 +3490,30 @@ void get_coordinates()
     }
     else destination[i] = current_position[i]; //Are these else lines really needed?
   }
+
+#ifdef USE_FILAMENT_DETECTION
+  //SERIAL_ECHO_START;
+  //SERIAL_ECHOPGM("Check FILAMENT:");
+  //SERIAL_ECHOLN(buflen);
+
+  static int cmd = 0;
+
+  if ( ( destination[E_AXIS] > current_position[E_AXIS] ) && ( buflen == (BUFSIZE-1) ) ) {
+     // X_MAX_PIN -> 36
+     if ( cmd > 5 ) {
+       if ( ( READ(X_MIN_PIN)==0 ) && ( forced_M600 == false ) ) {
+          SERIAL_ECHO_START;
+          SERIAL_ECHOLNPGM("No FILAMENT");
+          forced_M600 = true;
+       }
+       cmd = 0;
+    }
+    cmd++;
+  } else {
+    cmd = 0;
+  }
+#endif
+
   if(code_seen('F')) {
     next_feedrate = code_value();
     if(next_feedrate > 0.0) feedrate = next_feedrate;
