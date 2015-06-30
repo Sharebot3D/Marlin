@@ -264,7 +264,7 @@ CXXSRC = WMath.cpp WString.cpp Print.cpp Marlin_main.cpp	\
 	SdFile.cpp SdVolume.cpp motion_control.cpp planner.cpp		\
 	stepper.cpp temperature.cpp cardreader.cpp ConfigurationStore.cpp \
 	watchdog.cpp SPI.cpp Servo.cpp Tone.cpp ultralcd.cpp digipot_mcp4451.cpp \
-	vector_3.cpp qr_solve.cpp memreader.cpp Hysteresis.cpp
+	vector_3.cpp qr_solve.cpp memreader.cpp Hysteresis.cpp lifetime_stats.cpp
 ifeq ($(LIQUID_TWI2), 0)
 ifeq ($(LANGUAGE_CHOICE), 6)
 CXXSRC += LiquidCrystalRus.cpp
@@ -349,12 +349,12 @@ ifneq ($(EXTRUDERS),)
 CTUNING += -DEXTRUDERS=${EXTRUDERS}
 endif
 #CEXTRA = -Wa,-adhlns=$(<:.c=.lst)
-CEXTRA = -fno-use-cxa-atexit
+CEXTRA = -fno-use-cxa-atexit -mrelax
 
 CFLAGS := $(CDEBUG) $(CDEFS) $(CINCS) -O$(OPT) $(CWARN) $(CEXTRA) $(CTUNING)
 CXXFLAGS :=         $(CDEFS) $(CINCS) -O$(OPT) -Wall    $(CEXTRA) $(CTUNING)
 #ASFLAGS = -Wa,-adhlns=$(<:.S=.lst),-gstabs
-LDFLAGS = -lm
+LDFLAGS = -lm --relax
 
 
 # Programming support using avrdude. Settings and variables.

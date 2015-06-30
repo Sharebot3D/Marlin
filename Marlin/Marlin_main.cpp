@@ -49,6 +49,7 @@
 #include "pins_arduino.h"
 #include "Hysteresis.h"
 #include "math.h"
+#include "lifetime_stats.h"
 
 #ifdef BLINKM
 #include "BlinkM.h"
@@ -183,9 +184,6 @@
 //===========================================================================
 //=============================imported variables============================
 //===========================================================================
-#ifdef SBT_DEBUG
-char cbufdmy[128];
-#endif
 
 
 //===========================================================================
@@ -288,17 +286,17 @@ int EtoPPressure=0;
 bool cancel_heatup = false ;
 
 // Force parameters for beginners
-boolean force_temp = false;
+bool force_temp = false;
 float forced_M104;
 float forced_M106;
 float forced_M109;
 float forced_M190;
 
-//#define USE_FILAMENT_DETECTION
 // Forced filament change from filament detection
 #ifdef USE_FILAMENT_DETECTION
-boolean forced_M600 = false;
-boolean forced_M600_inqueue = false;
+bool forced_M600 = false;
+bool forced_M600_inqueue = false;
+bool detect_filament = true;
 #endif
 
 //===========================================================================
@@ -565,8 +563,77 @@ void setup()
   #ifdef DIGIPOT_I2C
     digipot_i2c_init();
   #endif
+
+  #ifdef USE_EXTERNAL_CLICK
+  pinMode(EXT_CLICK_PIN,INPUT);
+  WRITE(EXT_CLICK_PIN,HIGH);
+  #endif
+
+  lifetime_stats_init();
 }
 
+void sendM613Status( bool ok )
+{
+   int level;
+
+   SERIAL_ECHO_START;
+   SERIAL_ECHOPGM("M613");
+   SERIAL_ECHO(lcd_getstatus(&level));
+   SERIAL_ECHO(";");
+   SERIAL_ECHO(level);
+#if EXTRUDERS > 0
+   SERIAL_ECHOPGM(";0:");
+   SERIAL_ECHO(int(degHotend(0) + 0.5 ));
+   SERIAL_ECHOPGM("/");
+   SERIAL_ECHO(int(degTargetHotend(0) + 0.5 ));
+#endif
+#if EXTRUDERS > 1
+   SERIAL_ECHOPGM(";1:");
+   SERIAL_ECHO(int(degHotend(0) + 0.5 ));
+   SERIAL_ECHOPGM("/");
+   SERIAL_ECHO(int(degTargetHotend(0) + 0.5 ));
+#endif
+#if TEMP_SENSOR_BED != 0
+   SERIAL_ECHOPGM(";B:");
+   SERIAL_ECHO(int(degBed() + 0.5 ));
+   SERIAL_ECHOPGM("/");
+   SERIAL_ECHO(int(degTargetBed() + 0.5 ));
+#endif
+
+   if (IS_SD_PRINTING) {
+      SERIAL_ECHOPGM(";");
+      SERIAL_ECHO(itostr3(card.percentDone()));
+   } else {
+      SERIAL_ECHOPGM(";-1");
+   }
+
+   SERIAL_ECHOPGM(";");
+   SERIAL_ECHO(ftostr32(current_position[X_AXIS]));
+   SERIAL_ECHOPGM(";");
+   SERIAL_ECHO(ftostr32(current_position[Y_AXIS]));
+   SERIAL_ECHOPGM(";");
+   SERIAL_ECHO(ftostr32(current_position[Z_AXIS]));
+   SERIAL_ECHOPGM(";");
+   SERIAL_ECHOLN(itostr3(feedmultiply));
+   if ( ok ) {
+      SERIAL_ECHOLNPGM("ok");
+   }
+}
+
+void sendM613Click( bool request )
+{
+   int level;
+
+   SERIAL_ECHO_START;
+   SERIAL_ECHOPGM("M613");
+   SERIAL_ECHO(lcd_getstatus(&level));
+   SERIAL_ECHO(";");
+   SERIAL_ECHO(level);
+   if ( request ) 
+      SERIAL_ECHOLNPGM(";C:1");
+   else
+      SERIAL_ECHOLNPGM(";C:0");
+}
 
 void loop()
 {
@@ -613,6 +680,7 @@ void loop()
   manage_inactivity();
   checkHitEndstops();
   lcd_update();
+  lifetime_stats_tick();
 }
 
 void get_command()
@@ -841,14 +909,6 @@ void get_command()
       }
     }
 
-#ifdef SBT_DEBUG
-    if ( serial_count!=0) {
-      sprintf(cbufdmy, "Incomplete line:'%s'", cmdbuffer[bufindw]);
-      SERIAL_ECHO_START;
-      SERIAL_ECHOLN(cbufdmy);
-      serial_count=0;
-    }
-#endif
   }
 
   #ifdef SDSUPPORT
@@ -1273,10 +1333,14 @@ static void homeaxis(int axis) {
      if (axis == Z_AXIS) {
        #if Z_HOME_DIR == 1
          #define HOME_Z_DUAL_COND ( (READ(Z_MAX_PIN)==1) || (READ(Z2_MAX_PIN)==1) )
-         #define HOME_Z_DUAL_DIR_PIN INVERT_Z_DIR
+         #define HOME_Z_DUAL_DIR_PIN !INVERT_Z_DIR
+         #define HOME_Z_COND (READ(Z_MAX_PIN))
+         #define HOME_Z2_COND (READ(Z2_MAX_PIN))
        #else
          #define HOME_Z_DUAL_COND ( (READ(Z_MIN_PIN)==1) || (READ(Z2_MIN_PIN)==1) )
-         #define HOME_Z_DUAL_DIR_PIN !INVERT_Z_DIR
+         #define HOME_Z_DUAL_DIR_PIN INVERT_Z_DIR
+         #define HOME_Z_COND (READ(Z_MIN_PIN))
+         #define HOME_Z2_COND (READ(Z2_MIN_PIN))
        #endif
        while ( HOME_Z_DUAL_COND ) {
           int i;
@@ -1284,7 +1348,7 @@ static void homeaxis(int axis) {
           manage_heater();
           manage_inactivity();
           lcd_update();
-          if ( (READ(Z_MIN_PIN))==1 ) {
+          if ( HOME_Z_COND==1 ) {
             WRITE(Z_DIR_PIN,HOME_Z_DUAL_DIR_PIN);
              for ( i=0; i<400; i++ ) {
                 delay(1); 
@@ -1296,7 +1360,7 @@ static void homeaxis(int axis) {
           manage_heater();
           manage_inactivity();
           lcd_update();
-          if ( (READ(Z2_MIN_PIN))==1 ) {
+          if ( HOME_Z2_COND==1 ) {
             WRITE(Z2_DIR_PIN,HOME_Z_DUAL_DIR_PIN);
             for ( i=0; i<400; i++) {
               delay(1); 
@@ -1426,7 +1490,7 @@ void process_commands()
       #endif //FWRETRACT
     case 28: //G28 Home all Axis one at a time
 #ifdef ENABLE_AUTO_BED_LEVELING
-      //plan_bed_level_matrix.set_to_identity();  //Reset the plane ("erase" all leveling data)
+      plan_bed_level_matrix.set_to_identity();  //Reset the plane ("erase" all leveling data)
 #endif //ENABLE_AUTO_BED_LEVELING
 
 
@@ -2222,6 +2286,9 @@ void process_commands()
             #else
               SERIAL_PROTOCOLLN("");
             #endif
+            #ifdef USE_EXTERNAL_CLICK
+            sendM613Status( false );
+            #endif
             codenum = millis();
           }
           manage_heater();
@@ -2278,6 +2345,9 @@ void process_commands()
             SERIAL_PROTOCOLPGM(" B:");
             SERIAL_PROTOCOL_F(degBed(),1);
             SERIAL_PROTOCOLLN("");
+            #ifdef USE_EXTERNAL_CLICK
+            sendM613Status( false );
+            #endif
             codenum = millis();
           }
           manage_heater();
@@ -2800,7 +2870,7 @@ void process_commands()
           }
         }
         else if (servo_index >= 0) {
-          SERIAL_PROTOCOL(MSG_OK);
+          SERIAL_ECHO_START;
           SERIAL_PROTOCOL(" Servo ");
           SERIAL_PROTOCOL(servo_index);
           SERIAL_PROTOCOL(": ");
@@ -2848,7 +2918,7 @@ void process_commands()
         #endif
 
         updatePID();
-        SERIAL_PROTOCOL(MSG_OK);
+        SERIAL_ECHO_START;
         SERIAL_PROTOCOL(" p:");
         SERIAL_PROTOCOL(Kp);
         SERIAL_PROTOCOL(" i:");
@@ -2872,7 +2942,7 @@ void process_commands()
         if(code_seen('D')) bedKd = scalePID_d(code_value());
 
         updatePID();
-        SERIAL_PROTOCOL(MSG_OK);
+        SERIAL_ECHO_START;
         SERIAL_PROTOCOL(" p:");
         SERIAL_PROTOCOL(bedKp);
         SERIAL_PROTOCOL(" i:");
@@ -3117,6 +3187,9 @@ void process_commands()
         delay(100);
         LCD_MESSAGEPGM(MSG_FILAMENTCHANGE);
         lcd_ForceStatusScreen(true);
+#ifdef USE_EXTERNAL_CLICK
+        sendM613Click( true );
+#endif
         uint8_t cnt=0;
         while(!lcd_clicked()){
           cnt++;
@@ -3141,6 +3214,10 @@ void process_commands()
           #endif
           }
         }
+#ifdef USE_EXTERNAL_CLICK
+        sendM613Click( false );
+#endif
+
 
         // Wait until the button is not clicked
         while(lcd_clicked()){
@@ -3151,6 +3228,9 @@ void process_commands()
        
         delay(500); 
         LCD_MESSAGEPGM(MSG_LOAD_SINGLE);
+#ifdef USE_EXTERNAL_CLICK
+        sendM613Click( true );
+#endif
         // Extrude until the button is clicked
         while(!lcd_clicked()){
           manage_heater();
@@ -3161,7 +3241,9 @@ void process_commands()
           plan_buffer_line(target[X_AXIS], target[Y_AXIS], target[Z_AXIS], target[E_AXIS], feedrate/100, active_extruder);
 
         }
-
+#ifdef USE_EXTERNAL_CLICK
+        sendM613Click( false );
+#endif
         // E axis is handled directly by the user so reset it to the actual position
         target[E_AXIS]=lastpos[E_AXIS];
         current_position[E_AXIS]=target[E_AXIS];
@@ -3300,10 +3382,14 @@ void process_commands()
 
       #if Z_HOME_DIR == 1
         #define HOME_Z_DUAL_COND ( (READ(Z_MAX_PIN)==1) || (READ(Z2_MAX_PIN)==1) )
-        #define HOME_Z_DUAL_DIR_PIN INVERT_Z_DIR
+        #define HOME_Z_DUAL_DIR_PIN !INVERT_Z_DIR
+        #define HOME_Z_COND (READ(Z_MAX_PIN))
+        #define HOME_Z2_COND (READ(Z2_MAX_PIN))
       #else
         #define HOME_Z_DUAL_COND ( (READ(Z_MIN_PIN)==1) || (READ(Z2_MIN_PIN)==1) )
-        #define HOME_Z_DUAL_DIR_PIN !INVERT_Z_DIR
+        #define HOME_Z_DUAL_DIR_PIN INVERT_Z_DIR
+        #define HOME_Z_COND (READ(Z_MAX_PIN))
+        #define HOME_Z2_COND (READ(Z2_MAX_PIN))
       #endif
       while ( HOME_Z_DUAL_COND ) {
         int i;
@@ -3311,7 +3397,7 @@ void process_commands()
         manage_heater();
         manage_inactivity();
         lcd_update();
-        if ( (READ(Z_MIN_PIN))==1 ) {
+        if ( HOME_Z_COND==1 ) {
           WRITE(Z_DIR_PIN,HOME_Z_DUAL_DIR_PIN);
            for ( i=0; i<400; i++ ) {
               delay(1);
@@ -3323,7 +3409,7 @@ void process_commands()
         manage_heater();
         manage_inactivity();
         lcd_update();
-        if ( (READ(Z2_MIN_PIN))==1 ) {
+        if ( HOME_Z2_COND==1 ) {
           WRITE(Z2_DIR_PIN,HOME_Z_DUAL_DIR_PIN);
           for ( i=0; i<400; i++) {
             delay(1);
@@ -3341,6 +3427,14 @@ void process_commands()
       gcode_LastN = Stopped_gcode_LastN;
       FlushSerialRequestResend();
     break;
+
+    case 2000: // M2000: Print lifetime stats
+      if(code_seen('R')) {
+        reset_triptime();
+      }
+      print_lifetime_stats();
+      break;
+
     }
   }
 
@@ -3498,7 +3592,7 @@ void get_coordinates()
 
   static int cmd = 0;
 
-  if ( ( destination[E_AXIS] > current_position[E_AXIS] ) && ( buflen == (BUFSIZE-1) ) ) {
+  if ( detect_filament && ( destination[E_AXIS] > current_position[E_AXIS] ) && ( buflen == (BUFSIZE-1) ) ) {
      // X_MAX_PIN -> 36
      if ( cmd > 5 ) {
        if ( ( READ(X_MIN_PIN)==0 ) && ( forced_M600 == false ) ) {

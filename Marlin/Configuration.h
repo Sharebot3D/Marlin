@@ -6,12 +6,21 @@
 // BASIC SETTINGS: select your board type, temperature sensor type, axis scaling, and endstop configuration
 
 // Specific configurations
-//#define CFG_MATERIA101
+// 0 - DEFAULT
+// 1 - CFG_MATERIA101
+// 2 - SHAREBOT Q
+#define SPEC_CFG 0
 
-#ifdef CFG_MATERIA101
+#if SPEC_CFG == 1
 #undef CONFIGURATION_H
 #include "cfg_materia101.h"
 #include "cfg_materia101_adv.h"
+
+#elif SPEC_CFG == 2
+#undef CONFIGURATION_H
+#include "cfg_Q.h"
+#include "cfg_Q_adv.h"
+#include "pins_Q.h"
 
 #else
 // Default: Marlin configuration
@@ -117,6 +126,7 @@
 //--NORMAL IS 4.7kohm PULLUP!-- 1kohm pullup can be used on hotend sensor, using correct resistor and table
 //
 //// Temperature sensor settings:
+// -3 is MLX90614 IR sensor (only for sensor 0)
 // -2 is thermocouple with MAX6675 (only for sensor 0)
 // -1 is thermocouple with AD595
 // 0 is not used
@@ -147,6 +157,8 @@
 // 147 is Pt100 with 4k7 pullup
 // 110 is Pt100 with 1k pullup (non standard)
 // 70 is 500C thermistor for Pico hot end
+
+#define USE_FILAMENT_DETECTION
 
 #if EXTRUDERS == 1
 
@@ -544,7 +556,7 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 // Offset of the extruders (uncomment if using more than one and relying on firmware to position when changing).
 // The offset has to be X=0, Y=0 for the extruder 0 hotend (default extruder).
 // For the other hotends it is their distance from the extruder 0 hotend.
-#define EXTRUDER_OFFSET_X {0.0,-35.50} // (in mm) for each extruder, offset of the hotend on the X axis
+#define EXTRUDER_OFFSET_X {0.0,-58.50} // (in mm) for each extruder, offset of the hotend on the X axis
 #define EXTRUDER_OFFSET_Y {0.0, 0.00}  // (in mm) for each extruder, offset of the hotend on the Y axis
 
 // The speed change that does not require acceleration (i.e. the software might assume it can be done instanteneously)

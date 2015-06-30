@@ -237,7 +237,7 @@ extern float retract_length, retract_feedrate, retract_zlift;
 extern float retract_recover_length, retract_recover_feedrate;
 #endif
 
-extern boolean force_temp;
+extern bool force_temp;
 extern float forced_M104;
 extern float forced_M106;
 extern float forced_M109;
@@ -252,6 +252,10 @@ extern uint8_t active_extruder;
 #ifdef DIGIPOT_I2C
 extern void digipot_i2c_set_current( int channel, float current );
 extern void digipot_i2c_init();
+#endif
+
+#ifdef USE_FILAMENT_DETECTION
+extern bool detect_filament;
 #endif
 
 #endif

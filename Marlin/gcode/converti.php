@@ -3,7 +3,7 @@
 $names=Array( "SharebotNG_LevelPlate_Auto.gcode",
               "SharebotNG_FilamentChange_L.gcode",
               "SharebotNG_FilamentChange_R.gcode",
-              "SharebotNG_LevelPlate_Man.gcode",
+              "M101_LevelPlate_Man.gcode",
               "SharebotNG_Nozzles.gcode",
               "SharebotNG_DualExtrusionCalibration.gcode",
               "SharebotNG_MovePlateDown.gcode" );
@@ -39,8 +39,8 @@ foreach ( $names as $pos=>$name ) {
 		fwrite ( $fpw, "#ifndef SC_".$var_name."\n" );
    		echo "#define SC_".$var_name."\n";
 		fwrite ( $fpw, "#define SC_".$var_name."\n" );
-   		echo "PROGMEM prog_char ".$var_name."[] = {";
-		fwrite ( $fpw, "PROGMEM prog_char ".$var_name."[] = {" );
+   		echo "PROGMEM const prog_char ".$var_name."[] = {";
+		fwrite ( $fpw, "PROGMEM const prog_char ".$var_name."[] = {" );
   	 	while ( !feof($fp) ) {
                         $line = fgets( $fp );
                         $line = str_replace( "%PRINTER%", "Sharebot NG     ", $line );

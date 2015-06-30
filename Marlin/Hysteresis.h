@@ -42,6 +42,7 @@ public:
   Hysteresis( float x_mm, float y_mm, float z_mm, float e_mm );
   
   void Set( float x_mm, float y_mm, float z_mm, float e_mm );
+  void Get( float *x_mm, float *y_mm, float *z_mm, float *e_mm );
   void SetAxis( int axis, float mm );
   void ReportToSerial();
   void InsertCorrection(const float &x, const float &y, const float &z, const float &e);

@@ -53,6 +53,22 @@ void Hysteresis::Set( float x_mm, float y_mm, float z_mm, float e_mm )
 }
 
 //===========================================================================
+void Hysteresis::Get( float *x_mm, float *y_mm, float *z_mm, float *e_mm )
+{
+  if ( x_mm != NULL )
+    *x_mm = m_hysteresis_mm[X_AXIS];
+
+  if ( y_mm != NULL )
+    *y_mm = m_hysteresis_mm[Y_AXIS];
+
+  if ( z_mm != NULL )
+    *z_mm = m_hysteresis_mm[Z_AXIS];
+
+  if ( e_mm != NULL )
+    *e_mm = m_hysteresis_mm[E_AXIS];
+}
+
+//===========================================================================
 void Hysteresis::SetAxis( int axis, float mm )
 {
   m_hysteresis_mm[axis] = mm;

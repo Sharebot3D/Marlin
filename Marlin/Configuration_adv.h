@@ -495,6 +495,9 @@ const unsigned int dropsegments=5; //everything with less than this number of st
 #if TEMP_SENSOR_0 == -2
   #define HEATER_0_USES_MAX6675
 #endif
+#if TEMP_SENSOR_0 == -3
+  #define HEATER_0_USES_MLX90614
+#endif
 #if TEMP_SENSOR_0 == 0
   #undef HEATER_0_MINTEMP
   #undef HEATER_0_MAXTEMP

@@ -270,7 +270,9 @@ static void lcd_sdcard_stop()
 
     enquecommand_P((PSTR("G0 Z200 F1000")));
     enquecommand_P((PSTR("G28 X Y"))); // move all axis home
-    enquecommand_P((PSTR("M106 S0")));
+    // Only 3 commands can be buffered
+    //enquecommand_P((PSTR("M106 S0")));
+    fanSpeed = 0;
 
     if(SD_FINISHED_STEPPERRELEASE)
     {
@@ -456,6 +458,9 @@ static void lcd_tune_menu()
 #endif
 #ifdef FILAMENTCHANGEENABLE
     MENU_ITEM(gcode, MSG_FILAMENTCHANGE, PSTR("M600 X220 Y200"));
+#endif
+#ifdef USE_FILAMENT_DETECTION
+    MENU_ITEM_EDIT( bool, MSG_FILAMENT_DETECTION, &detect_filament );
 #endif
     END_MENU();
 }
@@ -650,6 +655,11 @@ static void lcd_prepare_menu()
         MENU_ITEM(function, MSG_CHANGE_SINGLE, lcd_ut_change_right);
     }
 #endif
+
+#ifdef USE_FILAMENT_DETECTION
+    MENU_ITEM_EDIT( bool, MSG_FILAMENT_DETECTION, &detect_filament );
+#endif
+
     END_MENU();
 }
 
@@ -1508,6 +1518,11 @@ void lcd_buttons_update()
   #if BTN_ENC > 0
     if((blocking_enc<millis()) && (READ(BTN_ENC)==0))
         newbutton |= EN_C;
+    #ifdef USE_EXTERNAL_CLICK
+    if ( (blocking_enc<millis()) && (READ(EXT_CLICK_PIN)==0) ) {
+           newbutton |= EN_C;
+    }
+    #endif
   #endif
     buttons = newbutton;
     #ifdef LCD_HAS_SLOW_BUTTONS

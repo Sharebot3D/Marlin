@@ -493,7 +493,7 @@ static void lcd_implementation_status_screen()
     lcd.print('%');
 # if LCD_WIDTH > 19
 #  ifdef SDSUPPORT
-    lcd.setCursor(7, 2);
+    lcd.setCursor(6, 2);
     lcd_printPGM(PSTR("SD"));
     if (IS_SD_PRINTING)
         lcd.print(itostr3(card.percentDone()));
@@ -502,16 +502,16 @@ static void lcd_implementation_status_screen()
     lcd.print('%');
 #  endif//SDSUPPORT
 # endif//LCD_WIDTH > 19
-    lcd.setCursor(LCD_WIDTH - 6, 2);
+    lcd.setCursor(LCD_WIDTH - 7, 2);
     lcd.print(LCD_STR_CLOCK[0]);
     if(starttime != 0)
     {
         uint16_t time = millis()/60000 - starttime/60000;
-        lcd.print(itostr2(time/60));
+        lcd.print(itostr3(time/60));
         lcd.print(':');
         lcd.print(itostr2(time%60));
     }else{
-        lcd_printPGM(PSTR("--:--"));
+        lcd_printPGM(PSTR("---:--"));
     }
 #endif
 

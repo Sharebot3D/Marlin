@@ -97,6 +97,7 @@ MemReader::MemReader()
   // Utilities program length
   ScriptLength[0] = -1;
   ScriptLength[1] = LEVEL_PLATE_A_LENGTH;
+  //ScriptLength[1] = -1;
   ScriptLength[2] = LEVEL_PLATE_M_LENGTH;
   ScriptLength[3] = CHANGE_RIGHT_LENGTH;
   ScriptLength[4] = MOVEDOWN_LENGTH;
